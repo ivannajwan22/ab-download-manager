@@ -43,13 +43,22 @@ jobs:
         run: |
           echo "SKIP_ANDROID_BUILD=true" >> $GITHUB_ENV
 
-      - name: Use Android Secrets
+      - name: Prepare Android signing files
         if: matrix.os == 'ubuntu-latest'
+        shell: bash
         run: |
-          echo "ABDM_KEYSTORE_FILE=${{ secrets.ABDM_KEYSTORE_FILE }}" >> $GITHUB_ENV
-          echo "ABDM_KEYSTORE_FILE_PASSWORD=${{ secrets.ABDM_KEYSTORE_FILE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ABDM_KEYSTORE_KEY_ALIAS=${{ secrets.ABDM_KEYSTORE_KEY_ALIAS }}" >> $GITHUB_ENV
-          echo "ABDM_KEYSTORE_KEY_PASSWORD=${{ secrets.ABDM_KEYSTORE_KEY_PASSWORD }}" >> $GITHUB_ENV
+          echo "Decoding keystore..."
+          echo "${{ secrets.ABDM_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+
+          echo "Creating local.properties..."
+          cat <<EOF > local.properties
+          storeFile=keystore.jks
+          storePassword=${{ secrets.ABDM_KEYSTORE_FILE_PASSWORD }}
+          keyAlias=${{ secrets.ABDM_KEYSTORE_KEY_ALIAS }}
+          keyPassword=${{ secrets.ABDM_KEYSTORE_KEY_PASSWORD }}
+          EOF
+
+          ls -lah
 
       # Steps specific to macOS (to create DMG for macOS)
       - name: Install create-dmg (for macOS)
